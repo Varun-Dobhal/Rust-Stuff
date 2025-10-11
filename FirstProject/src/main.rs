@@ -1,3 +1,7 @@
+use fake::Dummy;
+
+
+
 // const A:i32=50;
 // fn main() {
 //     const  num:[i32;4]=[3,3,4,4];
