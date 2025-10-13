@@ -68,8 +68,18 @@
 // //     value
 // // }
 
+
 use FirstProject::GymWorkout;
 fn main() {
    let workout=GymWorkout::new();
    println!("{:#?}",workout);
 }
+
+
+
+// fn main() {
+//     let mut name:String=String::from("Varun");
+//     let lname:String=String::from("Dobhal");
+//     name.push_str(&lname);
+//     println!("{name}");
+// }
