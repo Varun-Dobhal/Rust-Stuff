@@ -1,85 +1,85 @@
-// use fake::Dummy;
+use chrono::{Date, DateTime, Utc};
+use clap::{Parser};
+use tabled::{Table, Tabled, settings::{Color, Style, object::{Columns, Rows}}};
+use std::{
+    fmt::format, fs::{self, File}, path::{self, Path, PathBuf}, vec
+};
+use owo_colors::{OwoColorize, style};
+use strum::Display;
 
-
-
-// // const A:i32=50;
-// // fn main() {
-// //     const  num:[i32;4]=[3,3,4,4];
-// //     println!("Hello, world!{A} ");
-// //     let Ball=383;
-// // }
-// // fn open(num:i32){
-// //     let w=num+1;
-// // }
-
-// use std::vec;
-
-// // fn main() {
-// //     let n=5;
-// //     let mut fact=1;
-// //     for i in  1..=n {
-// //         fact*=i;
-// //     }
-// //     println!("{fact}");
-// // }
-// fn main(){
-//     // let  b=String::from("Buytyer");
-//     // // fun(b.clone());
-//     // let x=&b[..];
-//     // println!("{x}");
-//     // let x=[1,3,4,2,4];
-//     // let slice=&x[2..4];
-//     // struct Coffee{
-//     //     name:String,
-//     //     price:i32,
-//     // }
-//     // let mocha=Coffee{
-//     //     name:String::from("Mocha"),
-//     //     price:500,
-//     // };
-//     // print!("{}",mocha.name);
-    
-//     // println!("Value is {}",identity(5));
-//     // println!("Value is {}",identity(3.14));
-
-//     // let str_arr=[
-//     //     String::from("Hlo"),
-//     //     String::from("Meow"),
-//     //     String::from("Boom"),
-//     // ];
-//     // let b=str_arr.get(2);
-//     // println!("{b:?}");
-
-//     // let mut s=vec!["Hlo","Hi","Bi"];
-//     // while let Some(s) = s.pop() {
-//     //     println!("{s:?}");
-//     // }
-
-//     let x= vec!["ho","yo"];
-//     let xx=x[0];
-//     println!("{xx}");
-
-
-// }
-// // fn fun(mut meal:String){
-// //     meal.push_str(" and fries");
-// // }
-// // fn identity<T>(value:T)->T{
-// //     value
-// // }
-
-
-use FirstProject::GymWorkout;
-fn main() {
-   let workout=GymWorkout::new();
-   println!("{:#?}",workout);
+#[derive(Debug, Display)]
+enum EntryType {
+    File,
+    Dir,
 }
 
+#[derive(Debug,Tabled)]
+struct FileEntry {
+    #[tabled{rename="Name"}]
+    name: String,
+    #[tabled{rename="Type"}]
+    e_type: EntryType,
+    #[tabled{rename="Size"}]
+    len_btyes: u64,
+    #[tabled{rename="Modified"}]
+    modified: String,
+}
 
+#[derive(Debug, Parser)]
+#[command(version, about, long_about = "Creating my First CLI Application >>>>>")]
+struct Cli {
+    path: Option<PathBuf>,
+}
 
-// fn main() {
-//     let mut name:String=String::from("Varun");
-//     let lname:String=String::from("Dobhal");
-//     name.push_str(&lname);
-//     println!("{name}");
-// }
+fn main() {
+    let cli = Cli::parse();
+    let path = cli.path.unwrap_or(PathBuf::from("."));
+
+    if let Ok(does_exist) = fs::exists(&path) {
+        if does_exist {
+            let get_files=get_files(&path);
+            let mut table=Table::new(get_files);
+            table.with(Style::rounded()); 
+            table.modify(Columns::first(), Color::FG_BRIGHT_CYAN);  
+            table.modify(Columns::one(2), Color::FG_BRIGHT_MAGENTA);     
+            table.modify(Columns::one(3), Color::FG_BRIGHT_YELLOW); 
+            table.modify(Rows::first(), Color::FG_BRIGHT_GREEN);  
+            println!("{}",table);
+        } else {
+            println!("{}", "Path does not exist".red());
+        }
+    } else {
+        println!("{}", "Error reading directory".red());
+    }
+}
+
+// Function to display files.
+fn get_files(path: &Path) -> Vec<FileEntry> {
+    let mut data = Vec::default();
+
+    if let Ok(read_dir) = fs::read_dir(path) {
+        for entry in read_dir {
+            if let Ok(file) = entry {
+                map_data(file, &mut data);
+            }
+        }
+    }
+    data
+}
+
+// After getting Mapping Data into our Struct.
+fn map_data(file: fs::DirEntry, data: &mut Vec<FileEntry>) {
+    if let Ok(meta) = fs::metadata(&file.path()) {
+        data.push(FileEntry {
+            name: file.file_name().into_string().unwrap_or("unknown name".into()),
+            e_type: if meta.is_dir() { EntryType::Dir } else { EntryType::File },
+            len_btyes: meta.len(),
+            modified: if let Ok(modi) = meta.modified() {
+                let date:DateTime<Utc>=modi.into();
+                format!("{}",date.format("%a %b %e %Y"))
+            } else {
+                String::default()
+            }
+        });
+    }
+}
